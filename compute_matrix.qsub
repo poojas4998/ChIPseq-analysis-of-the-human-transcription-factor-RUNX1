@@ -1,0 +1,29 @@
+#!/bin/bash -l
+#$ -P bf528
+#$ -cwd
+#$ -j y
+#$ -pe mpi_16_tasks_per_node 16
+echo "Running job $JOB_ID"
+echo "Started: $(date +%F)"
+echo "Running in directory: $PWD"
+
+# your commands here
+module load python3/3.8.6
+module load samtools
+module load deeptools/3.5.1
+
+
+
+# For IP sample 1
+computeMatrix scale-regions -S sorted_bam_SRR2919475_file_output.bw -R hg19_genes.bed -a 2000 -b 2000 -o matrix_rep1.gz
+
+# For IP sample 2
+computeMatrix scale-regions -S runx1_rep2_sorted_output.bw -R hg19_genes.bed -a 2000 -b 2000 -o matrix_rep2.gz
+
+#plot for sample 1
+plotProfile -m matrix_rep1.gz -o rep1.png
+
+#plot for sample 2
+plotProfile -m matrix_rep2.gz -o rep2.png
+
+echo "Job finished: $(date +%F)"

@@ -1,0 +1,24 @@
+#!/bin/bash -l
+
+#$ -P bf528
+#$ -cwd
+#$ -j y
+#$ -pe mpi_16_tasks_per_node 16
+
+echo "Running job $JOB_ID"
+echo "Started: $(date +%F)"
+echo "Running in directory: $PWD"
+
+# your commands here
+
+module load python3/3.8.6
+module load deeptools/3.5.1
+module load samtools
+
+multiBigwigSummary bins --bwfiles inp_rep1_sorted_output.bw  inp_rep2_sorted_output.bw runx1_rep2_sorted_output.bw sorted_bam_SRR2919475_file_output.bw --outFileName multiBigWigSummary.npz
+
+# Generate the clustered heatmap of the Pearson correlation values
+plotCorrelation --corData multiBigWigSummary.npz --corMethod pearson --whatToPlot heatmap --plotFile plotCorrelation.png --outFileCorMatrix plotCorrelation.txt --skipZeros --plotTitle "Pearson Correlation Coefficient" -- labels "INPUT1" "INPUT2" "RUNX1 ChIP1" "RUNX1 ChIP2"  --plotNumbers --colorMap coolwarm
+
+
+echo "Job finished: $(date +%F)"

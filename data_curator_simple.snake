@@ -1,0 +1,66 @@
+# don't alter this next line please
+shell.prefix('set +u; source ~/.bashrc; ')
+
+rule all:
+        input:
+                'multiqc_report.html'
+
+rule fastqc:
+        input:
+                fastq = 'SRR2919475.fastq.gz'
+        output:
+                fastqc_zip = 'SRR2919475_fastqc.zip',
+                fastqc_html = 'SRR2919475_fastqc.html'
+        shell:
+                'module load fastqc/0.11.7 && fastqc {input.fastq}' 
+
+rule trimmomatic:
+        input:
+                fastqc_zip = 'SRR2919475_fastqc.zip',
+                fastq = 'SRR2919475.fastq.gz'
+        output:
+                trimmed_fastq = 'trimmed_SRR2919475.fastq'
+        shell:
+                'module load trimmomatic && trimmomatic SE -phred33 {input.fastq} {output.trimmed_fastq} ILLUMINACLIP:/project/bf528/project_3_chipseq/references/TruSeq3-SE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36'
+rule bowtie2:
+	input:
+		trimmed_fastq = 'trimmed_SRR2919475.fastq',
+		ref_index = '/project/bf528/project_3_chipseq/references/GRCh37.p13.genome.bowtie2'
+	output:
+		bam_file = 'bam_SRR2919475_file.bam'
+	threads: 16
+	shell:
+		'module load bowtie2/2.4.2 && module load htslib/1.9 && module load samtools/1.9 && bowtie2 -x {input.ref_index} -U {input.trimmed_fastq}  | samtools view -bS > {output.bam_file}'
+
+rule flagstats:
+	input:
+		bam_file = 'bam_SRR2919475_file.bam'
+	output:
+		bam_stats = 'bam_SRR2919475_file_stats.bam'
+	shell:
+		'samtools flagstat {input.bam_file} > {output.bam_stats}'
+
+rule sort_bam:
+	input:
+		bam_stats = 'bam_SRR2919475_file_stats.bam'
+	output:
+		sorted_bam = 'sorted_bam_SRR2919475_file.bam'
+	shell:
+		'module load htslib/1.9 && module load samtools/1.9 && samtools sort bam_SRR2919475_file.bam -o {output.sorted_bam}'
+
+rule index_bam:
+	input:
+		sorted_bam = 'sorted_bam_SRR2919475_file.bam'
+	output:
+		sorted_indexed_bam = 'sorted_bam_SRR2919475_file.bam.bai'
+	shell:	
+		'samtools index {input.sorted_bam}'
+
+rule MultiQC:
+	input:
+		sorted_indexed_bam = 'sorted_bam_SRR2919475_file.bam.bai'
+	output:
+		report = 'multiqc_report.html'
+	shell:
+		'module load python2 && module load multiqc/1.6 && multiqc .'
+

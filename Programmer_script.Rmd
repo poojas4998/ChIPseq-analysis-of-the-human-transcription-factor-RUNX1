@@ -1,0 +1,102 @@
+---
+title: "Programmer Figures and Script"
+author: "Pragya"
+date: "2023-04-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### qsub script used for ChIP-Seq analysis
+```
+#!/bin/bash -l
+
+#$ -cwd
+#$ -N programmer_proj3
+#$ -m e
+#$ -j y 
+#$ -M rpragya@bu.edu
+#$ -P bf528 
+
+#Load modules 
+module load htslib/1.9
+module load samtools/1.9
+module load R/4.2.3
+module load homer/4.10
+module load bedtools/2.30.0
+
+#Create Tag Directories for samples
+makeTagDirectory inp_rep1_tag inp_rep1_sorted.bam 
+makeTagDirectory inp_rep2_tag inp_rep2_sorted.bam
+makeTagDirectory runx1_rep2_tag runx1_rep2_sorted.bam
+makeTagDirectory runx1_rep1_tag sorted_bam_SRR2919475_file.bam
+
+#Identify peaks 
+findPeaks runx1_rep1_tag -style factor -i inp_rep1_tag -o runx1_rep1_peaks.txt
+findPeaks runx1_rep2_tag -style factor -i inp_rep2_tag -o runx1_rep2_peaks.txt 
+
+#convert peak files into BED format  
+pos2bed.pl runx1_rep1_peaks.txt > runx1_rep1_peaks.BED
+pos2bed.pl runx1_rep2_peaks.txt > runx1_rep2_peaks.BED
+
+#identify reproducible peaks with BEDTools 
+bedtools intersect -f 0.50 -r -a runx1_rep1_peaks.BED -b runx1_rep2_peaks.BED > reproducible_peaks.BED
+
+#remove peaks included in the blacklist 
+bedtools subtract -A -a reproducible_peaks.BED -b /project/bf528/project_3_chipseq/references/hg19_blacklist.bed > filtered_peaks.BED 
+
+#Annotate filtered peaks
+annotatePeaks.pl filtered_peaks.BED hg19 > annotated_peaks.txt
+
+#Find motifs 
+mkdir motifs
+findMotifsGenome.pl filtered_peaks.BED /projectnb/bf528/project_3_chipseq/references/GRCh37.p13.genome.fa motifs -size 200
+```
+
+#### Plot pie-chart showing the relative proportions of “reproducible” peaks annotated to genomic features (intron, intergenic, TSS, TTS, etc.)
+
+```{r}
+# Load data 
+annotated_peaks <- read.delim("annotated_peaks.txt", sep= "\t")
+
+# Extracting annotations and storing in a list 
+annotations <- annotated_peaks$Annotation
+annotation_list <- gsub("\\s*\\(.*\\)", "", annotations)
+
+# Counts of each unique genomic feature in the annotated data 
+counts <- table(annotation_list)
+counts
+```
+
+```{r}
+# Load packages required to plot piechart
+library(ggplot2)
+library(dplyr)
+
+# Create dataframe to plot piechart
+df <- data.frame(table = names(counts), count = counts) %>% 
+  dplyr::rename("Feature" = "table", "Counts"= "count.Freq") %>%
+  select(c(Feature, Counts))
+
+# Calculate the proportions of each string in the list
+df$Percent <-  round((df$Counts / sum(df$Counts))*100, 2)
+
+# Defining colors to be used in plot 
+pie_color <- c( "#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02", "#A6761D","#666666")
+
+# Create a pie chart using ggplot2
+pie<- ggplot(df, aes(x = "", y = Percent, fill = Feature)) + 
+  geom_bar(stat = "identity", width = 1) +
+  geom_text(aes(label = ifelse(Percent > 5, paste0(Percent, "%"), "")),
+             position = position_stack(vjust = 0.5)) +
+  coord_polar("y", start = 0) +
+  scale_fill_manual(values = pie_color) +
+  labs(title = "5067 RUNX1 peaks") +
+  theme_void()
+pie
+
+# Save pie chart as a png 
+ggsave("genomic_features_piechart.png", plot = pie, width = 6, height = 6, dpi = 300)
+```

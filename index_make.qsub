@@ -1,0 +1,22 @@
+#!/bin/bash -l
+
+#$ -P bf528
+#$ -cwd
+#$ -j y
+#$ -pe mpi_16_tasks_per_node 16
+
+echo "Running job $JOB_ID"
+echo "Started: $(date +%F)"
+echo "Running in directory: $PWD"
+
+# your commands here
+module load python3/3.8.6
+module load samtools
+module load deeptools/3.5.1
+
+bamCoverage --bam /projectnb/bf528/users/group_5/project_3/analyst/provided_files/inp_rep1_sorted.bam --outFileName inp_rep1_sorted_output.bw
+bamCoverage --bam /projectnb/bf528/users/group_5/project_3/analyst/provided_files/inp_rep2_sorted.bam --outFileName inp_rep2_sorted_output.bw
+bamCoverage --bam /projectnb/bf528/users/group_5/project_3/analyst/provided_files/runx1_rep2_sorted.bam --outFileName runx1_rep2_sorted_output.bw
+bamCoverage --bam /projectnb/bf528/users/group_5/project_3/analyst/Data_curator_files/sorted_bam_SRR2919475_file.bam --outFileName sorted_bam_SRR2919475_file_output.bw
+
+echo "Job finished: $(date +%F)"
