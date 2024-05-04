@@ -1,12 +1,13 @@
-# bf528_project3
+# Project 3: ChIP sequencing
 
-# Project Description
+## Project Description
 
+This is a 
 This project aims to investigate the role of the RUNX1 protein in breast cancer cells. The RUNX protein family plays a crucial role in regulating various biological processes to determine proper cell fate. The RUNX1 protein acts as an oncogene and tumor suppressor in breast cancer cells by participating in pathways that change chromatin structure. The authors of this study used ChIP-seq and genome-wide chromatin conformation capture techniques to investigate the effects of suppressing the expression of RUNX1 in MCF-7 breast cancer cells. They found that RUNX1 is involved in long-range chromatin interactions and regulates a set of genes that are involved in cellular processes such as cell cycle progression and DNA damage response.
 
 The project aims to replicate the results of the paper using the replicate ChIP-seq data for analysis. The samples used in this study come from RUNX1 depleted and MCF-7 control breast cancer cells. The workflow for this project includes data acquisition, reproducible peak finding and filtering, peak annotation and motif finding, and generating bigWig files for correlation analysis and visualization.
 
-# Contributors
+## Contributors
 
 Group 5
 
@@ -18,7 +19,7 @@ Pooja Savla - Analyst (poojas4998)
 
 Vrinda Jethalia - Biologist (vrindajethalia799)
 
-# Repository Contents
+## Repository Contents
 
 data_curator_simple.snake - snakemake workflow to conduct data processing and check data quality 
 
